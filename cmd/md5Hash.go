@@ -1,22 +1,22 @@
 package cmd
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
 
-// sha256HashCmd represents the sha256Hash command
-var sha256HashCmd = &cobra.Command{
-	Use:   "sha256 [FILE]...",
-	Short: "Display SHA256 checksums (256 bits).",
-	Long: `Display SHA256 checksums (256 bits).
+// md5HashCmd represents the md5Hash command
+var md5HashCmd = &cobra.Command{
+	Use:   "md5 [FILE]...",
+	Short: "Display MD5 checksums (128 bits).",
+	Long: `Display MD5 checksums (128 bits).
 
 Without FILE or when FILE is '-', read the standard input.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filesToCheck := getFilesToCompute(args)
-		h := sha256.New()
+		h := md5.New()
 		res, err := computeFiles(filesToCheck, h)
 		if err != nil {
 			return err
@@ -27,5 +27,5 @@ Without FILE or when FILE is '-', read the standard input.`,
 }
 
 func init() {
-	hashCmd.AddCommand(sha256HashCmd)
+	hashCmd.AddCommand(md5HashCmd)
 }
