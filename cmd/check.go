@@ -7,6 +7,7 @@ import (
 	"hash"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -27,6 +28,10 @@ func init() {
 
 func checkHash(h hash.Hash) error {
 	reader := bufio.NewReader(os.Stdin)
+	r, err := regexp.Compile(fmt.Sprintf("^[a-fA-F0-9]{%d}$", hex.EncodedLen(h.Size())))
+	if err != nil {
+		return nil
+	}
 	for {
 		input, err := reader.ReadString('\n')
 		if err != nil {
@@ -42,8 +47,11 @@ func checkHash(h hash.Hash) error {
 		}
 		hashToCheck := strings.Trim(inputs[0], " ")
 		path := strings.Trim(inputs[1], " ")
-		if hex.DecodedLen(len(hashToCheck)) != h.Size() {
-			return fmt.Errorf("malformed hash. Expected %d bytes, got %d", h.Size(), hex.DecodedLen(len(hashToCheck)))
+		if !r.MatchString(hashToCheck) {
+			if hex.DecodedLen(len(hashToCheck)) != h.Size() {
+				return fmt.Errorf("malformed hash. Expected %d bytes, got %d", h.Size(), hex.DecodedLen(len(hashToCheck)))
+			}
+			return fmt.Errorf("found invalid hexadecimal value")
 		}
 		hash, err := computeHash(path, h)
 		if err != nil {
