@@ -1,12 +1,14 @@
-name: Build
+name: Release
 on:
   push:
-    branches:
-      - '**'        # matches every branch
+    tags:
+      - "v*.*.*"
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: Setup Go
@@ -17,5 +19,7 @@ jobs:
         run: go get .
       - name: Build
         run: ./scripts/build.sh
-      # - name: Test with the Go CLI
-      #   run: go test
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/*
