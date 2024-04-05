@@ -1,6 +1,6 @@
 module github.com/Bilou4/hasher
 
-go 1.19
+go 1.22
 
 require (
 	github.com/glaslos/ssdeep v0.3.3
