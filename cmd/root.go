@@ -72,7 +72,7 @@ func getFilesToCompute(args []string) ([]string, error) {
 			}
 		}
 	}
-	fmt.Printf("Computing hash for: %d files.", len(args))
+	fmt.Printf("Computing hash for: %d files.\n", len(args))
 
 	return args, nil
 }
