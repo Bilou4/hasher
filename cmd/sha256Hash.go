@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"crypto/sha256"
-	"fmt"
 
 	"github.com/spf13/cobra"
 )
@@ -13,16 +12,28 @@ var sha256HashCmd = &cobra.Command{
 	Short: "Display SHA256 checksums (256 bits).",
 	Long: `Display SHA256 checksums (256 bits).
 
-Without FILE or when FILE is '-', read the standard input.`,
+Without FILE or when FILE is '-', read the standard input.
+If the list of FILE contains a directory, it will be proceed recursively.
+If the list of FILE contains './...' it will proceed directories recursively from the current directory.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filesToCheck := getFilesToCompute(args)
-		h := sha256.New()
-		res, err := computeFiles(filesToCheck, h)
+		filesToCheck, err := getFilesToCompute(args)
 		if err != nil {
 			return err
 		}
-		fmt.Print(res)
-		return nil
+
+		numJobs := len(filesToCheck)
+		jobs := make(chan JobsParam, numJobs)
+		results := make(chan HashResult, numJobs)
+
+		initWorkers(jobs, results)
+
+		for _, filePath := range filesToCheck {
+			h := sha256.New()
+			jobs <- JobsParam{filePath, h}
+		}
+		close(jobs)
+
+		return waitForResult(numJobs, results)
 	},
 }
 
