@@ -1,11 +1,13 @@
 package cmd
 
 import (
-	"bufio"
+	"encoding/hex"
 	"fmt"
-	"hash"
-	"io"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"runtime"
+	"slices"
 
 	"github.com/spf13/cobra"
 )
@@ -29,25 +31,85 @@ func Execute() {
 	}
 }
 
-func computeHash(path string, h hash.Hash) ([]byte, error) {
-	if path == "-" {
-		reader := bufio.NewReader(os.Stdin)
-		buffer := make([]byte, 1024)
-		for {
-			n, err := reader.Read(buffer)
-			h.Write(buffer[:n])
-			if err == io.EOF {
-				break
-			}
-		}
-	} else {
-		file, err := os.Open(path)
+// https://stackoverflow.com/questions/37334119/how-to-delete-an-element-from-a-slice-in-golang
+func remove(s []string, i int) []string {
+	s[i] = s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+func getFilesToCompute(args []string) ([]string, error) {
+	var err error
+	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
+		return []string{"-"}, nil
+	}
+
+	// Here ./ tells to start from the current folder, ... tells to go down recursively.
+	if slices.Contains(args, "./...") {
+		idx := slices.Index(args, "./...")
+		args = remove(args, idx)
+		args, err = computeDirRecursively(args, ".")
 		if err != nil {
 			return nil, err
 		}
-		if _, err := io.Copy(h, file); err != nil {
+	}
+
+	// check for dirs and all files exist
+	for idx, elem := range args {
+		f, err := os.Open(elem)
+		if err != nil {
 			return nil, err
 		}
+		defer f.Close()
+		fInfo, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+		if fInfo.IsDir() {
+			args = remove(args, idx)
+			args, err = computeDirRecursively(args, elem)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
-	return h.Sum(nil), nil
+	fmt.Printf("Computing hash for: %d files.", len(args))
+
+	return args, nil
+}
+
+func computeDirRecursively(l []string, rootFolder string) ([]string, error) {
+	err := filepath.WalkDir(rootFolder, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() {
+			l = append(l, path)
+		}
+		return nil
+	})
+	return l, err
+}
+
+func initWorkers(jobs chan JobsParam, results chan HashResult) {
+	for i := 0; i <= runtime.NumCPU(); i++ {
+		go worker(jobs, results)
+	}
+}
+
+func waitForResult(nbJobs int, results chan HashResult) error {
+	for a := 1; a <= nbJobs; a++ {
+		res := <-results
+		if res.err != nil {
+			return res.err
+		}
+		fmt.Printf("%s %s\n", hex.EncodeToString(res.res), res.path)
+	}
+	return nil
+}
+
+func worker(jobs <-chan JobsParam, results chan<- HashResult) {
+	for j := range jobs {
+		hashedValue, err := computeHash(j.path, j.h)
+		results <- HashResult{hashedValue, j.path, err}
+	}
 }
