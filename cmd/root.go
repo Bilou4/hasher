@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 
 	"github.com/spf13/cobra"
 )
@@ -37,20 +36,9 @@ func remove(s []string, i int) []string {
 	return s[:len(s)-1]
 }
 
-func getFilesToCompute(args []string) ([]string, error) {
-	var err error
+func getFilesToCompute(args []string, recursive bool) ([]string, error) {
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
 		return []string{"-"}, nil
-	}
-
-	// Here ./ tells to start from the current folder, ... tells to go down recursively.
-	if slices.Contains(args, "./...") {
-		idx := slices.Index(args, "./...")
-		args = remove(args, idx)
-		args, err = computeDirRecursively(args, ".")
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// check for dirs and all files exist
@@ -66,7 +54,7 @@ func getFilesToCompute(args []string) ([]string, error) {
 		}
 		if fInfo.IsDir() {
 			args = remove(args, idx)
-			args, err = computeDirRecursively(args, elem)
+			args, err = computeDir(args, elem, recursive)
 			if err != nil {
 				return nil, err
 			}
@@ -77,13 +65,19 @@ func getFilesToCompute(args []string) ([]string, error) {
 	return args, nil
 }
 
-func computeDirRecursively(l []string, rootFolder string) ([]string, error) {
+func computeDir(l []string, rootFolder string, recursive bool) ([]string, error) {
 	err := filepath.WalkDir(rootFolder, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() {
 			l = append(l, path)
+		} else {
+			// d is a directory
+			// skipping dirs if not in recursive mode - except for the rootFolder (obviously).
+			if filepath.Base(rootFolder) != d.Name() && !recursive {
+				return filepath.SkipDir
+			}
 		}
 		return nil
 	})

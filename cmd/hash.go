@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var recursiveFlag bool
+
 type HashResult struct {
 	res  []byte
 	path string
@@ -26,13 +28,13 @@ var hashCmd = &cobra.Command{
 	Long: `The hash command computes the hash of a given FILE.
 
 Without FILE or when FILE is '-', read the standard input.
-If the list of FILE contains a directory, it will be proceed recursively.
-If the list of FILE contains './...' it will proceed directories recursively from the current directory.`,
+If the list of FILE contains a directory, it can be proceed recursively.`,
 	SilenceErrors: true,
 }
 
 func init() {
 	rootCmd.AddCommand(hashCmd)
+	hashCmd.PersistentFlags().BoolVar(&recursiveFlag, "recursive", false, "When this flag is set, every directories in your input will be proceed recursively.")
 }
 
 func computeHash(path string, h hash.Hash) ([]byte, error) {
