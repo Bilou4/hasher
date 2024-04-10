@@ -13,9 +13,9 @@ var sha256HashCmd = &cobra.Command{
 	Long: `Display SHA256 checksums (256 bits).
 
 Without FILE or when FILE is '-', read the standard input.
-If the list of FILE contains a directory, it will be proceed recursively.`,
+If the list of FILE contains a directory, it can be proceed recursively.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filesToCheck, err := getFilesToCompute(args)
+		filesToCheck, err := getFilesToCompute(args, recursiveFlag)
 		if err != nil {
 			return err
 		}
