@@ -13,8 +13,7 @@ var md5HashCmd = &cobra.Command{
 	Long: `Display MD5 checksums (128 bits).
 
 Without FILE or when FILE is '-', read the standard input.
-If the list of FILE contains a directory, it will be proceed recursively.
-If the list of FILE contains './...' it will proceed directories recursively from the current directory.`,
+If the list of FILE contains a directory, it will be proceed recursively.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filesToCheck, err := getFilesToCompute(args)
 		if err != nil {

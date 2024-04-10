@@ -26,8 +26,7 @@ var hashCmd = &cobra.Command{
 	Long: `The hash command computes the hash of a given FILE.
 
 Without FILE or when FILE is '-', read the standard input.
-If the list of FILE contains a directory, it will be proceed recursively.
-If the list of FILE contains './...' it will proceed directories recursively from the current directory.`,
+If the list of FILE contains a directory, it will be proceed recursively.`,
 	SilenceErrors: true,
 }
 

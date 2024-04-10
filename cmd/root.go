@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 
 	"github.com/spf13/cobra"
 )
@@ -38,19 +37,8 @@ func remove(s []string, i int) []string {
 }
 
 func getFilesToCompute(args []string) ([]string, error) {
-	var err error
 	if len(args) == 0 || (len(args) == 1 && args[0] == "-") {
 		return []string{"-"}, nil
-	}
-
-	// Here ./ tells to start from the current folder, ... tells to go down recursively.
-	if slices.Contains(args, "./...") {
-		idx := slices.Index(args, "./...")
-		args = remove(args, idx)
-		args, err = computeDirRecursively(args, ".")
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	// check for dirs and all files exist
